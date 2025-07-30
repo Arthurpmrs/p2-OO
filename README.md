@@ -6,7 +6,7 @@ Trata-se de um sistema de linha de comando em que o usuário pode criar e gerenc
 python main.py
 ```
 
-## Funcionalidades implementadas até o dia 26/07/2025
+## Funcionalidades implementadas
 - [ ] User Roles and Permissions
 - [ ] Content Creation and Editing
 - [ ] Comment and Review System
