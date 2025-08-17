@@ -16,7 +16,7 @@ class MediaType(Enum):
     VIDEO = 2
 
 
-class SiteTemplate(Enum):
+class SiteTemplateType(Enum):
     TOP_POSTS_FIRST = "Posts mais vistos"
     TOP_COMMENTS_FIRST = "Posts mais comentados"
     LATEST_POSTS = "Últimos posts"
@@ -58,13 +58,13 @@ class Site:
     owner: User
     name: str
     description: str
-    template: SiteTemplate = SiteTemplate.LATEST_POSTS
+    template: SiteTemplateType = SiteTemplateType.LATEST_POSTS
 
     def get_domain(self) -> str:
         return self.name.lower().replace(" ", "-")
 
     def get_url(self) -> str:
-        domain = self.get_domain
+        domain = self.get_domain()
         return f"https://www.cms.{domain}.com.br"
 
 
