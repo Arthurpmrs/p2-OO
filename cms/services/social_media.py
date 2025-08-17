@@ -1,9 +1,9 @@
-from enum import Enum
 import re
+from enum import Enum
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
-from . import (
+from cms.models import (
     Post,
     Language,
     Content,
