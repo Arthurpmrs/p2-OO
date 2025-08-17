@@ -28,8 +28,9 @@ python main.py
 - **MediaBlock**: Represents a block containing a Media file that is part of a Post
 - **CarouselBlock**: Represents a carousel of Medias thath can be placed in the Post body
 - **MediaFile**: Represents a Media file and all their metadata (width, height, size in bytes, etc)
-- **VideoFile**: Represents a video file and their specific data
-- **ImageFile**: Represents an image file and their specific data
+- ~~**VideoFile**: Represents a video file and their specific data~~
+- ~~**ImageFile**: Represents an image file and their specific data~~
+    - These subclasses are not really necessary, because there are not enough differences between them. The MediaFile class alone will suffice for this application. 
 - **Permission**: Represents which Post/Site an User can access
 - **Comment**: Represents a message that a User can leave on a Post
 - **AnalyticsEntry**: Represents an action of an User that will be used to extract metrics
@@ -39,7 +40,8 @@ python main.py
 - **Template**: Represents the way the a Site will be presented to the User
 - **Language**: Represents a language that a User can write a Post or a Comment in
 - **SocialMedia**: Represents a Social Media to which the User can share a Post
-- **SocialMediaSharedPost**: Represents the Post formatted to that Social Media.
-- **FacebookSharedPost** Represents the Post formatted to be Posted in Facebook. 
-- **InstagramSharedPost** Represents the Post formatted to be Posted in Facebook. 
+- **SocialMediaPost**: Represents the Post formatted to that Social Media.
+- **FacebookPost** Represents the Post formatted to be Posted in Facebook. 
+- **InstagramPost** Represents the Post formatted to be Posted in Instagram. 
+- **TwitterPost** Represents the Post formatted to be Posted in Instagram. 
 
