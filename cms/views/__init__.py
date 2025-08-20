@@ -267,7 +267,9 @@ class Menu:
         if not self.logged_user or not self.selected_site:
             return
 
-        if self.permission_repo.has_permission(self.logged_user, self.selected_site):
+        if not self.permission_repo.has_permission(
+            self.logged_user, self.selected_site
+        ):
             return
 
         options: list[MenuOptions] = [
