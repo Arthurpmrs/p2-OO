@@ -56,7 +56,7 @@ class FocusOnMediaTemplate(SiteTemplate):
             for p in self.post_repo.get_site_posts(self.site)
             if any(
                 isinstance(b, MediaBlock)
-                for b in p.content_by_language[p.default_language.get_code()].body
+                for b in p.content_by_language[p.default_language.code].body
             )
         ]
 
@@ -82,13 +82,12 @@ _template_map: dict[SiteTemplateType, Type[SiteTemplate]] = {
 
 
 def build_site_template(
-    template_type: SiteTemplateType,
     site: Site,
     post_repo: PostRepository,
     analytics_repo: AnalyticsRepository,
 ) -> SiteTemplate:
-    template_cls = _template_map.get(template_type)
+    template_cls = _template_map.get(site.template)
     if not template_cls:
-        raise ValueError(f"Unknown template: {template_type}")
+        raise ValueError(f"Unknown template: {site.template}")
 
     return template_cls(site, post_repo, analytics_repo)

@@ -1,4 +1,5 @@
-from cms.models import Language, MediaBlock, Post, ContentBlock, Content, TextBlock
+from cms.models import MediaBlock, Post, ContentBlock, Content, TextBlock
+from cms.utils import select_language, get_missing_languages
 
 
 class PostTranslator:
@@ -7,23 +8,13 @@ class PostTranslator:
         self.original_language = post.default_language
 
     def translate(self):
-        target_language = input(
-            "Para qual idioma você deseja traduzir este post? "
-        ).strip()
+        missing_langs = get_missing_languages(self.post)
+        target_language = select_language(missing_langs)
 
-        if target_language in self.post.content_by_language:
-            overwrite = (
-                input(
-                    f"O post já possui tradução para '{target_language}'. Deseja sobrescrever? (s/n): "
-                )
-                .strip()
-                .lower()
-            )
-            if overwrite != "s":
-                print("Tradução cancelada.")
-                return
+        if not target_language:
+            return
 
-        original_content, _ = self.post.get_content_by_language()
+        original_content = self.post.get_content_by_language()
         translated_blocks: list[ContentBlock] = []
 
         print(
@@ -58,9 +49,9 @@ class PostTranslator:
         translated_content = Content(
             title=translated_title,
             body=translated_blocks,
-            language=Language(name=target_language, codes=[target_language]),
+            language=target_language,
         )
 
-        self.post.content_by_language[target_language] = translated_content
+        self.post.content_by_language[target_language.code] = translated_content
         print(f"Tradução para '{target_language}' adicionada ao post.")
         input("Clique Enter para voltar.")

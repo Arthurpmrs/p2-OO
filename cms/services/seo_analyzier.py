@@ -3,7 +3,7 @@ from cms.models import MediaBlock, Post, TextBlock, Language
 
 
 def display_seo_report(post: Post, language: Language):
-    content, _ = post.get_content_by_language(language)
+    content = post.get_content_by_language(language)
     title = content.title
     blocks = content.body
 
@@ -50,4 +50,4 @@ def display_seo_report(post: Post, language: Language):
     if not alt_texts or any(alt.strip() == "" for alt in alt_texts):
         print("[!] Algumas imagens estão sem texto alternativo (alt).")
 
-    print("\nAnálise finalizada.")
+    print("\nAnálise finalizada.", end=" ")

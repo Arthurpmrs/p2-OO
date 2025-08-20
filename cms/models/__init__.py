@@ -29,16 +29,24 @@ type LanguageCode = str
 @dataclass
 class Language:
     name: str
-    codes: list[LanguageCode]
+    code: LanguageCode
+    aliases: list[LanguageCode] = field(default_factory=list[str])
 
-    def add_code(self, code: str):
-        self.codes.append(code)
+    def add_alias_code(self, code: LanguageCode):
+        if code.lower().strip() not in self.aliases:
+            self.aliases.append(code.lower().strip())
 
-    def get_code(self) -> str:
-        if not self.codes:
-            raise Exception("Language code not provided!")
+    def is_language(self, code: LanguageCode) -> bool:
+        p_code = code.lower().strip()
+        return p_code == self.code or p_code in self.aliases
 
-        return self.codes[0]
+    def __str__(self) -> str:
+        return f"Lang('{self.name}')"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Language):
+            return NotImplemented
+        return other.code == self.code
 
 
 @dataclass
@@ -168,9 +176,9 @@ class Post:
         return self.scheduled_to >= datetime.now()
 
     def display_post(self, language: Language | None = None):
-        content, lang = self.get_content_by_language(language)
+        content = self.get_content_by_language(language)
 
-        print(f"[{lang}] ", content.title)
+        print(f"[{content.language.code}] ", content.title)
         print(f"Data de criação: {self.created_at}")
         print(" ")
         for block in content.body:
@@ -181,15 +189,15 @@ class Post:
         print(" ")
 
     def display_post_short(self, language: Language | None = None):
-        content, lang = self.get_content_by_language(language)
+        content = self.get_content_by_language(language)
 
-        print(f"[{lang}] ", content.title)
+        print(f"[{content.language.code}] ", content.title)
         print(f"{self.poster.username}@{self.created_at}")
         print(" ")
 
     def format_post_to_social_network(self, language: Language | None = None) -> str:
         SIZE_LIMIT = 100
-        content, lang = self.get_content_by_language(language)
+        content = self.get_content_by_language(language)
 
         block_to_display = None
         for block in content.body:
@@ -197,7 +205,7 @@ class Post:
                 block_to_display = block
                 break
 
-        s = f"[{lang}] {content.title}\n"
+        s = f"[{content.language.code}] {content.title}\n"
         s += f"{self.poster.username}@{self.created_at}\n"
         s += "\n"
 
@@ -211,25 +219,25 @@ class Post:
         return s
 
     def display_first_post_image(self):
-        for block in self.content_by_language[self.default_language.get_code()].body:
+        for block in self.content_by_language[self.default_language.code].body:
             if isinstance(block, MediaBlock):
                 block.display_content()
                 return
 
-    def get_content_by_language(
-        self, language: Language | None = None
-    ) -> tuple[Content, LanguageCode]:
+    def get_content_by_language(self, language: Language | None = None) -> Content:
         if not language:
             language = self.default_language
 
-        lang_code = language.get_code()
-        return self.content_by_language[lang_code], lang_code
+        return self.content_by_language[language.code]
 
     def get_default_title(self) -> str:
         if not self.content_by_language:
             raise ValueError(f"No content provided for Post(id={self.id}).")
 
-        return self.content_by_language[self.default_language.get_code()].title
+        return self.content_by_language[self.default_language.code].title
+
+    def get_languages(self) -> list[Language]:
+        return [content.language for content in self.content_by_language.values()]
 
 
 @dataclass

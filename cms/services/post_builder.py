@@ -1,8 +1,7 @@
 from datetime import datetime
 
-from cms.utils import read_datetime_from_cli
+from cms.utils import read_datetime_from_cli, select_from_supported_languages
 from cms.models import (
-    Language,
     Site,
     User,
     MediaFile,
@@ -23,7 +22,10 @@ class PostBuilder:
         self.blocks: list[ContentBlock] = []
 
     def build_post(self) -> Post:
-        language = input("Qual o idioma do post? (ex: pt, en): ").strip()
+        language = select_from_supported_languages()
+        if not language:
+            raise ValueError("Cannot continue post building without language")
+
         title = input("Digite o título do post: ").strip()
 
         order_counter = 1
@@ -66,13 +68,13 @@ class PostBuilder:
         post_content = Content(
             title=title,
             body=self.blocks,
-            language=Language(name=language, codes=[language]),
+            language=language,
         )
 
         post = Post(
             poster=self.poster,
             site=self.site,
-            content_by_language={language: post_content},
+            content_by_language={language.code: post_content},
             scheduled_to=scheduled_to,
         )
 

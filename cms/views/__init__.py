@@ -4,7 +4,8 @@ from pathlib import Path
 
 from cms.models import (
     Comment,
-    Media,
+    Content,
+    MediaFile,
     MediaBlock,
     Permission,
     Post,
@@ -17,7 +18,7 @@ from cms.models import (
     TextBlock,
     User,
     UserRole,
-    SocialNetwork,
+    Language,
 )
 from cms.services.post_builder import PostBuilder
 from cms.services.post_translator import PostTranslator
@@ -30,8 +31,10 @@ from cms.repository import (
     SiteRepository,
     UserRepository,
 )
-from cms.seo_analyzier import display_seo_report
-from cms.utils import infer_media_type
+from cms.services.seo_analyzier import display_seo_report
+from cms.services.site_template import build_site_template
+from cms.services.social_media import SocialMedia
+from cms.utils import infer_media_type, get_language_by_code, select_language
 
 
 MenuOptions = TypedDict(
@@ -43,8 +46,8 @@ class Menu:
     logged_user: User | None
     selected_site: Site | None
     selected_post: Post | None
-    selected_media: Media | None
-    selected_post_language: str | None
+    selected_media: MediaFile | None
+    selected_post_language: Language | None
 
     def __init__(self):
         self.user_repo = UserRepository()
@@ -135,7 +138,7 @@ class Menu:
             return
 
         options: list[MenuOptions] = [
-            {"message": "Listar posts do site", "function": self.select_post},
+            {"message": "Selecionar posts do site", "function": self.select_post},
         ]
 
         if self.permission_repo.has_permission(self.logged_user, self.selected_site):
@@ -169,7 +172,12 @@ class Menu:
 
         while True:
             os.system("clear")
-            self.display_site(self.selected_site)
+            template = build_site_template(
+                site=self.selected_site,
+                post_repo=self.post_repo,
+                analytics_repo=self.analytics_repo,
+            )
+            template.display()
             for i, option in enumerate(options):
                 print(f"{i + 1}. {option['message']}")
             print("0. Voltar")
@@ -201,7 +209,7 @@ class Menu:
 
         options: list[MenuOptions] = [
             {
-                "message": "Listar comentários do post",
+                "message": "Mostrar comentários do post",
                 "function": self.show_post_comments,
             },
             {"message": "Comentar no post", "function": self.comment_on_post},
@@ -374,51 +382,6 @@ class Menu:
         print(" ")
         input("Clique Enter para voltar ao Menu.")
 
-    def display_site(self, site: Site):
-        print(f"<========== {site.name} ==========>")
-        print(site.description)
-        print(" ")
-
-        if site.template == SiteTemplate.TOP_POSTS_FIRST:
-            print(f"{site.template.value}:")
-            posts = sorted(
-                self.post_repo.get_site_posts(site),
-                key=lambda p: self.analytics_repo.get_post_views(p.id),
-                reverse=True,
-            )
-        elif site.template == SiteTemplate.TOP_COMMENTS_FIRST:
-            print(f"{site.template.value}:")
-            posts = sorted(
-                self.post_repo.get_site_posts(site),
-                key=lambda p: self.analytics_repo.get_post_comments(p.id),
-                reverse=True,
-            )
-        elif site.template == SiteTemplate.FOCUS_ON_MEDIA:
-            print(f"{site.template.value}:")
-            posts = [
-                p
-                for p in self.post_repo.get_site_posts(site)
-                if any(
-                    isinstance(b, MediaBlock)
-                    for b in p.post_content_by_language[p.default_language]["body"]
-                )
-            ]
-        else:
-            print(f"{site.template.value}:")
-            posts = sorted(
-                self.post_repo.get_site_posts(site),
-                key=lambda p: p.created_at,
-                reverse=True,
-            )
-
-        for post in posts[:3]:
-            if site.template == SiteTemplate.FOCUS_ON_MEDIA:
-                post.display_first_post_image()
-            else:
-                post.display_post_short()
-
-        print(" ")
-
     def select_site(self):
         if not self.logged_user:
             return
@@ -461,18 +424,27 @@ class Menu:
             return
 
         pb = PostBuilder(self.selected_site, self.logged_user, self.media_repo)
-        post = pb.build_post()
-        self.post_repo.add_post(post)
-        self.analytics_repo.log(
-            SiteAnalyticsEntry(
-                user=self.logged_user,
-                site=self.selected_site,
-                action=SiteAction.CREATE_POST,
+        try:
+            post = pb.build_post()
+        except ValueError:
+            print(" ")
+            input(
+                "Criação do Post não pode continuar sem uma linguagem. "
+                "Clique Enter para voltar ao menu."
             )
-        )
+            return
+        else:
+            self.post_repo.add_post(post)
+            self.analytics_repo.log(
+                SiteAnalyticsEntry(
+                    user=self.logged_user,
+                    site=self.selected_site,
+                    action=SiteAction.CREATE_POST,
+                )
+            )
 
-        print(" ")
-        input("Post criado. Clique Enter para voltar ao menu.")
+            print(" ")
+            input("Post criado. Clique Enter para voltar ao menu.")
 
     def add_manager(self):
         if not self.logged_user or not self.selected_site:
@@ -548,7 +520,7 @@ class Menu:
             return
 
         print("Escolha o layout de apresentação do site:")
-        for i, t in enumerate(SiteTemplate):
+        for i, t in enumerate(SiteTemplateType):
             print(f"{i + 1}. {t.value}")
         print("0. Voltar")
         print(" ")
@@ -559,18 +531,16 @@ class Menu:
             if selected_option == 0:
                 return
 
-            if selected_option < 0 or selected_option > len(SiteTemplate):
+            if selected_option < 0 or selected_option > len(SiteTemplateType):
                 raise ValueError
 
-            new_template = list(SiteTemplate)[selected_option - 1]
+            new_template = list(SiteTemplateType)[selected_option - 1]
             self.selected_site.template = new_template
 
-            print(f"Template atualizado para: {new_template.value}")
+            print(f"Template atualizado para: {new_template.value}.", end=" ")
         except (ValueError, KeyError):
-            print("Opção inválida.")
+            print("Opção inválida.", end=" ")
 
-        print(" ")
-        print(" ")
         input("Clique enter para voltar ao menu.")
 
     def select_post(self):
@@ -678,85 +648,30 @@ class Menu:
         if not self.selected_post:
             return
 
-        languages = list(self.selected_post.post_content_by_language.keys())
+        languages = self.selected_post.get_languages()
         if len(languages) == 1:
             os.system("clear")
             input(
-                f"O Post só tem uma linguagem ({languages[0]}). Clique enter para voltar."
+                f"O Post só tem uma linguagem: {languages[0]}. Clique enter para voltar."
             )
             return
 
-        while True:
-            os.system("clear")
-
-            print("Opções de idioma para o post: ")
-            for i, lang in enumerate(languages):
-                print(f"{i + 1}. {lang}")
-            print("0. Voltar")
-            print(" ")
-
-            try:
-                selected_option = int(
-                    input("Digite o número da opção para selecioná-la: ")
-                )
-            except ValueError:
-                print("Opção inválida.\n")
-                continue
-
-            if selected_option == 0:
-                return
-
-            if selected_option < 0 or selected_option > len(languages):
-                print("Opção inválida.\n")
-                continue
-
-            self.selected_post_language = languages[selected_option - 1]
-            print(" ")
-            input(
-                f"Idioma {self.selected_post_language} selecionado. Clique enter para voltar."
-            )
-            break
+        self.selected_post_language = select_language(languages)
 
     def show_seo_report(self):
         if not self.selected_post:
             return
 
-        language = ""
-
-        languages = list(self.selected_post.post_content_by_language.keys())
+        languages = self.selected_post.get_languages()
         if len(languages) == 1:
             language = languages[0]
-
-        while True:
-            os.system("clear")
-
-            print("Opções de idioma para o post: ")
-            for i, lang in enumerate(languages):
-                print(f"{i + 1}. {lang}")
-            print("0. Voltar")
-            print(" ")
-
-            try:
-                selected_option = int(
-                    input("Digite o número da opção para selecioná-la: ")
-                )
-            except ValueError:
-                print("Opção inválida.\n")
-                continue
-
-            if selected_option == 0:
+        else:
+            language = select_language(languages)
+            if not language:
                 return
-
-            if selected_option < 0 or selected_option > len(languages):
-                print("Opção inválida.\n")
-                continue
-
-            language = languages[selected_option - 1]
-            break
 
         display_seo_report(self.selected_post, language)
 
-        print(" ")
         input("Clique Enter para voltar ao menu.")
 
     def share_post(self):
@@ -770,7 +685,7 @@ class Menu:
 
         print("Selecione as redes sociais para compartilhar:")
 
-        for i, network in enumerate(SocialNetwork):
+        for i, network in enumerate(SocialMedia):
             print(f"{i + 1}. {network.value}")
         print("0. Voltar")
 
@@ -789,12 +704,12 @@ class Menu:
             if n == 0:
                 return
 
-            if n < 0 or n > len(SocialNetwork):
+            if n < 0 or n > len(SocialMedia):
                 print("Opção inválida.\n")
                 continue
 
-            if 1 <= n <= len(SocialNetwork):
-                network = list(SocialNetwork)[n - 1]
+            if 1 <= n <= len(SocialMedia):
+                network = list(SocialMedia)[n - 1]
                 print(f"Post compartilhado em {network.value}.")
                 self.analytics_repo.log(
                     PostAnalyticsEntry(
@@ -878,12 +793,15 @@ class Menu:
         try:
             media_type = infer_media_type(path.suffix)
 
-            media = Media(
+            media = MediaFile(
                 uploader=self.logged_user,
                 filename=filename,
                 path=path,
                 media_type=media_type,
                 site=self.selected_site,
+                width="1000",
+                height="1000",
+                duration=None,
             )
 
             media_id = self.media_repo.add_midia(media)
@@ -906,7 +824,7 @@ class Menu:
         if not self.selected_site:
             return
 
-        medias: list[Media] = self.media_repo.get_site_medias(self.selected_site)
+        medias: list[MediaFile] = self.media_repo.get_site_medias(self.selected_site)
 
         if not medias:
             print("Nenhuma mídia encontrada para este site.")
@@ -1000,78 +918,70 @@ class Menu:
         post1 = Post(
             poster=admin,
             site=site,
-            default_language="br",
-            post_content_by_language={
-                "br": {
-                    "title": "Título do meu post",
-                    "body": [
+            content_by_language={
+                "pt-br": Content(
+                    title="Título do meu post",
+                    language=get_language_by_code("br"),
+                    body=[
                         TextBlock(
                             order=1,
-                            language="br",
                             text="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
                         ),
                         MediaBlock(
                             order=2,
-                            language="br",
                             alt="Uma imagem.",
                             media=self.media_repo.get_media_by_id(1),
                         ),
                         TextBlock(
                             order=3,
-                            language="br",
                             text="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
                         ),
                     ],
-                },
-                "en": {
-                    "title": "Super duper title of doom",
-                    "body": [
+                ),
+                "en-us": Content(
+                    title="Super duper title of doom",
+                    language=get_language_by_code("en"),
+                    body=[
                         TextBlock(
                             order=1,
-                            language="br",
                             text="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
                         ),
                         MediaBlock(
                             order=2,
-                            language="br",
                             alt="Some Imagee.",
                             media=self.media_repo.get_media_by_id(1),
                         ),
                         TextBlock(
                             order=3,
-                            language="br",
                             text="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
                         ),
                     ],
-                },
+                ),
             },
         )
         post2 = Post(
             poster=admin,
             site=site,
-            default_language="en",
-            post_content_by_language={
-                "en": {
-                    "title": "Title of my post",
-                    "body": [
+            content_by_language={
+                "en-us": Content(
+                    title="Title of my post",
+                    language=get_language_by_code("en"),
+                    body=[
                         TextBlock(
                             order=1,
-                            language="en",
                             text="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
                         ),
                         MediaBlock(
                             order=2,
-                            language="en",
                             alt="Some video",
                             media=self.media_repo.get_media_by_id(5),
                         ),
                         TextBlock(
                             order=3,
-                            language="en",
                             text="Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
                         ),
                     ],
-                }
+                )
             },
         )
         self.post_repo.add_post(post1)
@@ -1159,12 +1069,15 @@ class Menu:
                 media_type = infer_media_type(filepath.suffix)
 
                 self.media_repo.add_midia(
-                    Media(
+                    MediaFile(
                         uploader=uploader,
                         filename=filepath.name,
                         path=filepath,
                         media_type=media_type,
                         site=selected_site,
+                        width="1000",
+                        height="1000",
+                        duration=None,
                     )
                 )
 
