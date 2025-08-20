@@ -215,4 +215,4 @@ class MediaRepository:
         return self.medias[media_id]
 
     def remove_media(self, media_id: int):
-        self.medias.pop(media_id, None)
+        self.medias.pop(media_id)

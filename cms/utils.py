@@ -1,4 +1,6 @@
 from datetime import datetime
+from enum import Enum
+from typing import Type, TypeVar
 
 from cms.models import MediaType, Language, LanguageCode, Post
 
@@ -80,3 +82,30 @@ def select_language(languages: list[Language]) -> Language | None:
 
 def select_from_supported_languages() -> Language | None:
     return select_language(supported_languages)
+
+
+E = TypeVar("E", bound=Enum)
+
+
+def select_enum(enum_cls: Type[E], prompt: str = "Escolha uma opção:") -> E | None:
+    print(prompt)
+    for i, option in enumerate(enum_cls):
+        print(f"{i + 1}. {option.value}")
+    print("0. Voltar")
+    print(" ")
+
+    while True:
+        try:
+            selected_option = int(input("Digite a opção desejada: "))
+        except ValueError:
+            print("Opção inválida.\n")
+            continue
+
+        if selected_option == 0:
+            return None
+
+        if selected_option < 0 or selected_option > len(enum_cls):
+            print("Opção inválida.\n")
+            continue
+
+        return list(enum_cls)[selected_option - 1]

@@ -33,8 +33,13 @@ from cms.repository import (
 )
 from cms.services.seo_analyzier import display_seo_report
 from cms.services.site_template import build_site_template
-from cms.services.social_media import SocialMedia
-from cms.utils import infer_media_type, get_language_by_code, select_language
+from cms.services.social_media import SocialMedia, build_social_media_post
+from cms.utils import (
+    infer_media_type,
+    get_language_by_code,
+    select_language,
+    select_enum,
+)
 
 
 MenuOptions = TypedDict(
@@ -214,7 +219,10 @@ class Menu:
             },
             {"message": "Comentar no post", "function": self.comment_on_post},
             {"message": "Trocar idioma do post", "function": self.change_post_language},
-            {"message": "Compartilhar post", "function": self.share_post},
+            {
+                "message": "Sugestão de estrutura para comparilhamento em redes sociais",
+                "function": self.sharing_suggestion,
+            },
         ]
 
         if self.permission_repo.has_permission(self.logged_user, self.selected_site):
@@ -520,27 +528,13 @@ class Menu:
     def configure_site_template(self):
         if not self.selected_site:
             return
-
-        print("Escolha o layout de apresentação do site:")
-        for i, t in enumerate(SiteTemplateType):
-            print(f"{i + 1}. {t.value}")
-        print("0. Voltar")
-        print(" ")
-
-        try:
-            selected_option = int(input("Digite a opção desejada: "))
-
-            if selected_option == 0:
-                return
-
-            if selected_option < 0 or selected_option > len(SiteTemplateType):
-                raise ValueError
-
-            new_template = list(SiteTemplateType)[selected_option - 1]
+        new_template = select_enum(
+            SiteTemplateType, "Escolha o layout de apresentação do site:"
+        )
+        if new_template:
             self.selected_site.template = new_template
-
             print(f"Template atualizado para: {new_template.value}.", end=" ")
-        except (ValueError, KeyError):
+        else:
             print("Opção inválida.", end=" ")
 
         input("Clique enter para voltar ao menu.")
@@ -675,6 +669,49 @@ class Menu:
         display_seo_report(self.selected_post, language)
 
         input("Clique Enter para voltar ao menu.")
+
+    def sharing_suggestion(self):
+        if not self.selected_post or not self.logged_user or not self.selected_site:
+            return
+
+        print("Esta ferramenta te ajuda a estruturar seu Post para")
+        print("compartilhamento em redes sociais.")
+
+        print("\nPara obter sugestões, escolha o idioma do Post e a rede social.")
+        languages = self.selected_post.get_languages()
+        if len(languages) == 1:
+            language = languages[0]
+        else:
+            language = select_language(languages)
+            if not language:
+                input(
+                    "Não é possível continuar sem escolher um idioma. "
+                    "Clique Enter para voltar"
+                )
+                return
+
+        print(" ")
+
+        social_media = select_enum(SocialMedia, "Selecione uma rede social: ")
+        if not social_media:
+            input(
+                "Não é possível continuar sem escolher uma Rede Social. "
+                "Clique Enter para voltar"
+            )
+            return
+
+        os.system("clear")
+
+        print(f"Post: {self.selected_post.get_default_title()}")
+        print(f"Idioma: {language}")
+        print(f"Rede Social: {social_media}")
+
+        social_post = build_social_media_post(
+            social_media, self.selected_post, language
+        )
+        social_post.display_sharing_suggestion()
+
+        input("\nRecomendação finalizada. Clique Enter para voltar.")
 
     def share_post(self):
         if not self.selected_post or not self.logged_user or not self.selected_site:

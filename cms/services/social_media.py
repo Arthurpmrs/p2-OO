@@ -2,12 +2,12 @@ import re
 from enum import Enum
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
+from typing import Type
 
 from cms.models import (
     Post,
     Language,
     Content,
-    LanguageCode,
     TextBlock,
     MediaBlock,
     CaroulselBlock,
@@ -24,7 +24,7 @@ class SocialMedia(Enum):
 @dataclass
 class SocialMediaPost(ABC):
     original_post: Post
-    language: Language | None = None
+    language: Language
 
     @abstractmethod
     def get_suggested_text(self) -> str:
@@ -42,11 +42,11 @@ class SocialMediaPost(ABC):
     def get_media_recommendation(self) -> str:
         pass
 
-    def _get_post_content(self) -> tuple[Content, LanguageCode]:
+    def _get_post_content(self) -> Content:
         return self.original_post.get_content_by_language(self.language)
 
     def _extract_text_blocks(self) -> list[str]:
-        content, _ = self._get_post_content()
+        content = self._get_post_content()
         text_blocks: list[str] = []
 
         for block in content.body:
@@ -56,7 +56,7 @@ class SocialMediaPost(ABC):
         return text_blocks
 
     def _extract_media_blocks(self) -> list[MediaBlock]:
-        content, _ = self._get_post_content()
+        content = self._get_post_content()
         media_blocks: list[MediaBlock] = []
 
         for block in content.body:
@@ -135,7 +135,7 @@ class FacebookPost(SocialMediaPost):
         return 10
 
     def get_suggested_text(self) -> str:
-        content, lang_code = self._get_post_content()
+        content = self._get_post_content()
 
         suggested_text = f"📢 {content.title}\n\n"
         suggested_text += self._get_text_content_to_display()
@@ -146,7 +146,7 @@ class FacebookPost(SocialMediaPost):
         suggested_text += (
             f"#{self.original_post.site.name.replace(' ', '').replace('-', '')} "
         )
-        suggested_text += f"#blog #conteúdo #{lang_code}"
+        suggested_text += f"#blog #conteúdo #{content.language.code}"
 
         return suggested_text
 
@@ -175,7 +175,7 @@ class InstagramPost(SocialMediaPost):
         return 10
 
     def get_suggested_text(self) -> str:
-        content, lang_code = self._get_post_content()
+        content = self._get_post_content()
 
         suggested_text = f"{content.title} ✨\n\n"
 
@@ -188,7 +188,7 @@ class InstagramPost(SocialMediaPost):
 
         suggested_text += "🔗 Link na bio para ler completo\n\n"
 
-        hashtags = self._generate_instagram_hashtags(lang_code)
+        hashtags = self._generate_instagram_hashtags(content.language.code)
         suggested_text += hashtags
 
         return suggested_text[: self.get_character_limit()]
@@ -226,12 +226,12 @@ class TwitterPost(SocialMediaPost):
         return 4
 
     def get_suggested_text(self) -> str:
-        content, lang_code = self._get_post_content()
+        content = self._get_post_content()
 
         available_chars = self.get_character_limit()
 
         link = f" {self.original_post.site.get_url()}"
-        hashtags = f" #{self.original_post.site.name.replace(' ', '').replace('-', '')} #{lang_code}"
+        hashtags = f" #{self.original_post.site.name.replace(' ', '').replace('-', '')} #{content.language.code}"
         reserved_chars = len(link) + len(hashtags) + 10
 
         title_and_text_limit = available_chars - reserved_chars
@@ -258,3 +258,22 @@ class TwitterPost(SocialMediaPost):
             "Twitter: Imagens 1200x675px, até 4 imagens por tweet, "
             "vídeos até 2min20s, GIFs até 15MB."
         )
+
+
+_social_media_map: dict[SocialMedia, Type[SocialMediaPost]] = {
+    SocialMedia.FACEBOOK: FacebookPost,
+    SocialMedia.INSTAGRAM: InstagramPost,
+    SocialMedia.TWITTER: TwitterPost,
+}
+
+
+def build_social_media_post(
+    platform: SocialMedia,
+    post: Post,
+    language: Language,
+) -> SocialMediaPost:
+    post_cls = _social_media_map.get(platform)
+    if not post_cls:
+        raise ValueError(f"Plataforma desconhecida: {platform}")
+
+    return post_cls(original_post=post, language=language)
