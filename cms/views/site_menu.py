@@ -80,31 +80,6 @@ class SiteMenu(AbstractMenu):
             template.display()
 
         SiteMenu.prompt_menu_option(options, display_title)
-        # while True:
-        #     os.system("clear")
-
-        #     for i, option in enumerate(options):
-        #         print(f"{i + 1}. {option['message']}")
-        #     print("0. Voltar")
-        #     print(" ")
-
-        #     try:
-        #         selected_option = int(
-        #             input("Digite o número da opção para selecioná-la: ")
-        #         )
-        #     except ValueError:
-        #         print("Opção inválida.\n")
-        #         continue
-
-        #     if selected_option == 0:
-        #         return
-
-        #     if selected_option < 0 or selected_option > len(options):
-        #         print("Opção inválida.\n")
-        #         continue
-
-        #     os.system("clear")
-        #     options[selected_option - 1]["function"]()
 
     def _create_site_post(self):
         pb = PostBuilder(self.selected_site, self.logged_user, self.context.media_repo)
@@ -228,42 +203,6 @@ class SiteMenu(AbstractMenu):
             execute_for_option,
             lambda m: m.get_default_title(),
         )
-
-        # while True:
-        #     os.system("clear")
-        #     print("Posts do site")
-        #     for i, post in enumerate(posts):
-        #         print(f"{i + 1}. {post.get_default_title()}")
-        #     print("0. Voltar")
-        #     print(" ")
-
-        #     try:
-        #         selected_option = int(
-        #             input("Digite o número do site para selecioná-lo: ")
-        #         )
-        #     except ValueError:
-        #         print("Opção inválida.\n")
-        #         continue
-
-        #     if selected_option == 0:
-        #         return
-
-        #     if selected_option < 0 or selected_option > len(posts):
-        #         print("Opção inválida.\n")
-        #         continue
-
-        #     selected_post = posts[selected_option - 1]
-        #     self.context.analytics_repo.log(
-        #         PostAnalyticsEntry(
-        #             user=self.logged_user,
-        #             site=self.selected_site,
-        #             post=selected_post,
-        #             action=PostAction.VIEW,
-        #         )
-        #     )
-        #     PostMenu(
-        #         self.context, self.logged_user, self.selected_site, selected_post
-        #     ).show()
 
     def _media_library_menu(self):
         MediaLibraryMenu(self.context, self.logged_user, self.selected_site).show()
