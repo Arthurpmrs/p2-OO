@@ -20,33 +20,24 @@ class LoggedMenu(AbstractMenu):
         self.logged_user = logged_user
 
     def show(self):
+        options: list[MenuOptions] = [
+            {"message": "Exibir dados de perfil", "function": self.show_profile},
+            {"message": "Criar um site", "function": self.create_site},
+            {"message": "Selecionar um site", "function": self.select_site},
+            {"message": "Listar sites do usuário", "function": self.show_user_sites},
+        ]
+
+        if self.logged_user.role == UserRole.ADMIN:
+            options.extend(
+                [
+                    {"message": "Ver logs do sistema", "function": self.show_logs},
+                ]
+            )
+
         while True:
             os.system("clear")
             print("CMS")
             print(f"Bem vindo, {self.logged_user.first_name}!\n")
-
-            options: list[MenuOptions] = [
-                {
-                    "message": "Exibir dados de perfil",
-                    "function": self.show_profile,
-                },
-                {"message": "Criar um site", "function": self.create_site},
-                {"message": "Listar sites", "function": self.select_site},
-                {
-                    "message": "Listar sites do usuário",
-                    "function": self.show_user_sites,
-                },
-            ]
-
-            if self.logged_user.role == UserRole.ADMIN:
-                options.extend(
-                    [
-                        {
-                            "message": "Ver logs do sistema",
-                            "function": self.show_logs,
-                        },
-                    ]
-                )
 
             for i, option in enumerate(options):
                 print(f"{i + 1}. {option['message']}")
@@ -109,12 +100,16 @@ class LoggedMenu(AbstractMenu):
 
     def select_site(self):
         sites: list[Site] = self.context.site_repo.get_sites()
-        for i, site in enumerate(sites):
-            print(f"{i + 1}. {site.name}")
-        print("0. Voltar")
-        print(" ")
 
         while True:
+            os.system("clear")
+
+            print("Sites disponíveis")
+            for i, site in enumerate(sites):
+                print(f"{i + 1}. {site.name}")
+            print("0. Voltar")
+            print(" ")
+
             try:
                 selected_option = int(
                     input("Digite o número do site para selecioná-lo: ")
@@ -138,6 +133,7 @@ class LoggedMenu(AbstractMenu):
                     action=SiteAction.ACCESS,
                 )
             )
+
             SiteMenu(self.context, self.logged_user, selected_site).show()
 
     def show_user_sites(self):

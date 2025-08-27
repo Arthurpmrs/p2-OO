@@ -204,16 +204,16 @@ class SiteMenu(AbstractMenu):
         input("Clique enter para voltar ao menu.")
 
     def _select_post(self):
-        if not self.selected_site or not self.logged_user:
-            return
-
         posts: list[Post] = self.context.post_repo.get_site_posts(self.selected_site)
-        for i, post in enumerate(posts):
-            print(f"{i + 1}. {post.get_default_title()}")
-        print("0. Voltar")
-        print(" ")
 
         while True:
+            os.system("clear")
+            print("Posts do site")
+            for i, post in enumerate(posts):
+                print(f"{i + 1}. {post.get_default_title()}")
+            print("0. Voltar")
+            print(" ")
+
             try:
                 selected_option = int(
                     input("Digite o número do site para selecioná-lo: ")
