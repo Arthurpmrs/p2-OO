@@ -1,15 +1,16 @@
 from cms.models import MediaBlock, Post, ContentBlock, Content, TextBlock
-from cms.utils import select_language, get_missing_languages
+from cms.services.languages import LanguageService
 
 
 class PostTranslator:
     def __init__(self, post: Post):
         self.post = post
         self.original_language = post.default_language
+        self.lang_service = LanguageService()
 
     def translate(self):
-        missing_langs = get_missing_languages(self.post)
-        target_language = select_language(missing_langs)
+        missing_langs = self.lang_service.get_missing_languages(self.post)
+        target_language = self.lang_service.select_language(missing_langs)
 
         if not target_language:
             return

@@ -15,7 +15,7 @@ from cms.models import (
     User,
     UserRole,
 )
-from cms.utils import get_language_by_code, infer_media_type
+from cms.utils import infer_media_type
 from cms.views.menu import AppContext
 
 
@@ -59,7 +59,7 @@ def populate(context: AppContext):
         content_by_language={
             "pt-br": Content(
                 title="Título do meu post",
-                language=get_language_by_code("br"),
+                language=context.lang_service.get_language_by_code("br"),
                 body=[
                     TextBlock(
                         order=1,
@@ -78,7 +78,7 @@ def populate(context: AppContext):
             ),
             "en-us": Content(
                 title="Super duper title of doom",
-                language=get_language_by_code("en"),
+                language=context.lang_service.get_language_by_code("en"),
                 body=[
                     TextBlock(
                         order=1,
@@ -103,7 +103,7 @@ def populate(context: AppContext):
         content_by_language={
             "en-us": Content(
                 title="Title of my post",
-                language=get_language_by_code("en"),
+                language=context.lang_service.get_language_by_code("en"),
                 body=[
                     TextBlock(
                         order=1,

@@ -3,7 +3,7 @@ from cms.models import Comment, Post, PostAction, PostAnalyticsEntry, Site, User
 from cms.services.post_translator import PostTranslator
 from cms.services.seo_analyzier import display_seo_report
 from cms.services.social_media import SocialMedia, build_social_media_post
-from cms.utils import select_enum, select_language
+from cms.utils import select_enum
 from cms.views.menu import AbstractMenu, AppContext, MenuOptions
 
 
@@ -132,7 +132,9 @@ class PostMenu(AbstractMenu):
             )
             return
 
-        self.selected_post_language = select_language(languages)
+        self.selected_post_language = self.context.lang_service.select_language(
+            languages
+        )
 
     def _sharing_suggestion(self):
         print("Esta ferramenta te ajuda a estruturar seu Post para")
@@ -143,7 +145,7 @@ class PostMenu(AbstractMenu):
         if len(languages) == 1:
             language = languages[0]
         else:
-            language = select_language(languages)
+            language = self.context.lang_service.select_language(languages)
             if not language:
                 input(
                     "Não é possível continuar sem escolher um idioma. "
@@ -197,7 +199,7 @@ class PostMenu(AbstractMenu):
         if len(languages) == 1:
             language = languages[0]
         else:
-            language = select_language(languages)
+            language = self.context.lang_service.select_language(languages)
             if not language:
                 return
 

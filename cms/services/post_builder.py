@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from cms.utils import read_datetime_from_cli, select_from_supported_languages
+from cms.utils import read_datetime_from_cli
+from cms.services.languages import LanguageService
 from cms.models import (
     Site,
     User,
@@ -20,9 +21,10 @@ class PostBuilder:
         self.poster = poster
         self.media_repo = media_repo
         self.blocks: list[ContentBlock] = []
+        self.lang_service = LanguageService()
 
     def build_post(self) -> Post:
-        language = select_from_supported_languages()
+        language = self.lang_service.select_from_supported_languages()
         if not language:
             raise ValueError("Cannot continue post building without language")
 
