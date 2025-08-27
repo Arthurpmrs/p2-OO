@@ -34,33 +34,39 @@ class LoggedMenu(AbstractMenu):
                 ]
             )
 
-        while True:
-            os.system("clear")
-            print("CMS")
-            print(f"Bem vindo, {self.logged_user.first_name}!\n")
+        LoggedMenu.prompt_menu_option(
+            options,
+            lambda: print(f"CMS\nBem vindo, {self.logged_user.first_name}!\n"),
+            "Fazer logout",
+        )
 
-            for i, option in enumerate(options):
-                print(f"{i + 1}. {option['message']}")
-            print("0. Fazer Logout")
-            print(" ")
+        # while True:
+        #     os.system("clear")
+        #     print("CMS")
+        #     print(f"Bem vindo, {self.logged_user.first_name}!\n")
 
-            try:
-                selected_option = int(
-                    input("Digite o número da opção para selecioná-la: ")
-                )
-            except ValueError:
-                print("Opção inválida.\n")
-                continue
+        #     for i, option in enumerate(options):
+        #         print(f"{i + 1}. {option['message']}")
+        #     print("0. Fazer Logout")
+        #     print(" ")
 
-            if selected_option == 0:
-                break
+        #     try:
+        #         selected_option = int(
+        #             input("Digite o número da opção para selecioná-la: ")
+        #         )
+        #     except ValueError:
+        #         print("Opção inválida.\n")
+        #         continue
 
-            if selected_option < 0 or selected_option > len(options):
-                print("Opção inválida.\n")
-                continue
+        #     if selected_option == 0:
+        #         break
 
-            os.system("clear")
-            options[selected_option - 1]["function"]()
+        #     if selected_option < 0 or selected_option > len(options):
+        #         print("Opção inválida.\n")
+        #         continue
+
+        #     os.system("clear")
+        #     options[selected_option - 1]["function"]()
 
     def show_logs(self):
         try:
@@ -101,31 +107,7 @@ class LoggedMenu(AbstractMenu):
     def select_site(self):
         sites: list[Site] = self.context.site_repo.get_sites()
 
-        while True:
-            os.system("clear")
-
-            print("Sites disponíveis")
-            for i, site in enumerate(sites):
-                print(f"{i + 1}. {site.name}")
-            print("0. Voltar")
-            print(" ")
-
-            try:
-                selected_option = int(
-                    input("Digite o número do site para selecioná-lo: ")
-                )
-            except ValueError:
-                print("Opção inválida.\n")
-                continue
-
-            if selected_option == 0:
-                return
-
-            if selected_option < 0 or selected_option > len(sites):
-                print("Opção inválida.\n")
-                continue
-
-            selected_site = sites[selected_option - 1]
+        def execute_for_option(selected_site: Site):
             self.context.analytics_repo.log(
                 SiteAnalyticsEntry(
                     user=self.logged_user,
@@ -135,6 +117,44 @@ class LoggedMenu(AbstractMenu):
             )
 
             SiteMenu(self.context, self.logged_user, selected_site).show()
+
+        LoggedMenu.prompt_generic(
+            sites, "Sites disponíveis", execute_for_option, lambda m: m.name
+        )
+        # while True:
+        #     os.system("clear")
+
+        #     print("Sites disponíveis")
+        #     for i, site in enumerate(sites):
+        #         print(f"{i + 1}. {site.name}")
+        #     print("0. Voltar")
+        #     print(" ")
+
+        #     try:
+        #         selected_option = int(
+        #             input("Digite o número do site para selecioná-lo: ")
+        #         )
+        #     except ValueError:
+        #         print("Opção inválida.\n")
+        #         continue
+
+        #     if selected_option == 0:
+        #         return
+
+        #     if selected_option < 0 or selected_option > len(sites):
+        #         print("Opção inválida.\n")
+        #         continue
+
+        #     selected_site = sites[selected_option - 1]
+        #     self.context.analytics_repo.log(
+        #         SiteAnalyticsEntry(
+        #             user=self.logged_user,
+        #             site=selected_site,
+        #             action=SiteAction.ACCESS,
+        #         )
+        #     )
+
+        #     SiteMenu(self.context, self.logged_user, selected_site).show()
 
     def show_user_sites(self):
         if not self.logged_user:

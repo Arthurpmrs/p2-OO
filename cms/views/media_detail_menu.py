@@ -1,4 +1,3 @@
-import os
 from cms.models import MediaFile, User
 from cms.views.menu import AbstractMenu, AppContext, MenuOptions
 
@@ -20,8 +19,7 @@ class MediaMenu(AbstractMenu):
             {"message": "Deletar mídia", "function": self._delete_selected_media},
         ]
 
-        while True:
-            os.system("clear")
+        def display_title():
             media = self.selected_media
             print(f"Informações da mídia '{media.filename}':")
             print(f"ID: {media.id}")
@@ -29,28 +27,39 @@ class MediaMenu(AbstractMenu):
             print(f"Caminho: {media.path}")
             print(" ")
 
-            for i, option in enumerate(options):
-                print(f"{i + 1}. {option['message']}")
-            print("0. Voltar")
-            print(" ")
+        MediaMenu.prompt_menu_option(options, display_title)
 
-            try:
-                selected_option = int(
-                    input("Digite o número da opção para selecioná-la: ")
-                )
-            except ValueError:
-                print("Opção inválida.\n")
-                continue
+        # while True:
+        #     os.system("clear")
+        #     media = self.selected_media
+        #     print(f"Informações da mídia '{media.filename}':")
+        #     print(f"ID: {media.id}")
+        #     print(f"Tipo: {media.media_type.name}")
+        #     print(f"Caminho: {media.path}")
+        #     print(" ")
 
-            if selected_option == 0:
-                return
+        #     for i, option in enumerate(options):
+        #         print(f"{i + 1}. {option['message']}")
+        #     print("0. Voltar")
+        #     print(" ")
 
-            if selected_option < 0 or selected_option > len(options):
-                print("Opção inválida.\n")
-                continue
+        #     try:
+        #         selected_option = int(
+        #             input("Digite o número da opção para selecioná-la: ")
+        #         )
+        #     except ValueError:
+        #         print("Opção inválida.\n")
+        #         continue
 
-            os.system("clear")
-            options[selected_option - 1]["function"]()
+        #     if selected_option == 0:
+        #         return
+
+        #     if selected_option < 0 or selected_option > len(options):
+        #         print("Opção inválida.\n")
+        #         continue
+
+        #     os.system("clear")
+        #     options[selected_option - 1]["function"]()
 
     def _delete_selected_media(self):
         confirm = (

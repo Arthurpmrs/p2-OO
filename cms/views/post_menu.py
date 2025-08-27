@@ -64,33 +64,37 @@ class PostMenu(AbstractMenu):
                 ]
             )
 
-        while True:
-            os.system("clear")
+        def display_title():
             self.selected_post.display_post(self.selected_post_language)
 
-            print("Opções para o post ")
-            for i, option in enumerate(options):
-                print(f"{i + 1}. {option['message']}")
-            print("0. Voltar")
-            print(" ")
+        PostMenu.prompt_menu_option(options, display_title)
+        # while True:
+        #     os.system("clear")
+        #     self.selected_post.display_post(self.selected_post_language)
 
-            try:
-                selected_option = int(
-                    input("Digite o número da opção para selecioná-la: ")
-                )
-            except ValueError:
-                print("Opção inválida.\n")
-                continue
+        #     print("Opções para o post ")
+        #     for i, option in enumerate(options):
+        #         print(f"{i + 1}. {option['message']}")
+        #     print("0. Voltar")
+        #     print(" ")
 
-            if selected_option == 0:
-                return
+        #     try:
+        #         selected_option = int(
+        #             input("Digite o número da opção para selecioná-la: ")
+        #         )
+        #     except ValueError:
+        #         print("Opção inválida.\n")
+        #         continue
 
-            if selected_option < 0 or selected_option > len(options):
-                print("Opção inválida.\n")
-                continue
+        #     if selected_option == 0:
+        #         return
 
-            os.system("clear")
-            options[selected_option - 1]["function"]()
+        #     if selected_option < 0 or selected_option > len(options):
+        #         print("Opção inválida.\n")
+        #         continue
+
+        #     os.system("clear")
+        #     options[selected_option - 1]["function"]()
 
     def _show_post_comments(self):
         post_comments: list[Comment] = self.context.comment_repo.get_post_comments(

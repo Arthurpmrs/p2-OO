@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from cms.models import MediaFile, Site, SiteAction, SiteAnalyticsEntry, User
 from cms.utils import infer_media_type
@@ -27,31 +26,35 @@ class MediaLibraryMenu(AbstractMenu):
             {"message": "Listar mídias", "function": self._select_media},
         ]
 
-        while True:
-            os.system("clear")
-            print(f"Biblioteca de mídias do site '{self.selected_site.name}'")
-            for i, option in enumerate(options):
-                print(f"{i + 1}. {option['message']}")
-            print("0. Voltar")
-            print(" ")
+        MediaLibraryMenu.prompt_menu_option(
+            options,
+            lambda: print(f"Biblioteca de mídias do site {self.selected_site.name}\n"),
+        )
+        # while True:
+        #     os.system("clear")
+        #     print(f"Biblioteca de mídias do site '{self.selected_site.name}'")
+        #     for i, option in enumerate(options):
+        #         print(f"{i + 1}. {option['message']}")
+        #     print("0. Voltar")
+        #     print(" ")
 
-            try:
-                selected_option = int(
-                    input("Digite o número da opção para selecioná-la: ")
-                )
-            except ValueError:
-                print("Opção inválida.\n")
-                continue
+        #     try:
+        #         selected_option = int(
+        #             input("Digite o número da opção para selecioná-la: ")
+        #         )
+        #     except ValueError:
+        #         print("Opção inválida.\n")
+        #         continue
 
-            if selected_option == 0:
-                return
+        #     if selected_option == 0:
+        #         return
 
-            if selected_option < 0 or selected_option > len(options):
-                print("Opção inválida.\n")
-                continue
+        #     if selected_option < 0 or selected_option > len(options):
+        #         print("Opção inválida.\n")
+        #         continue
 
-            os.system("clear")
-            options[selected_option - 1]["function"]()
+        #     os.system("clear")
+        #     options[selected_option - 1]["function"]()
 
     def _import_media(self):
         filepath = input(
@@ -113,28 +116,38 @@ class MediaLibraryMenu(AbstractMenu):
             input("Clique Enter para voltar ao menu.")
             return
 
-        while True:
-            os.system("clear")
-            print(f"Mídias do site '{self.selected_site.name}':")
-            for i, media in enumerate(medias):
-                print(f"{i + 1}. {media.filename}")
-            print("0. Voltar")
-            print(" ")
-
-            try:
-                selected_option = int(
-                    input("Digite o número da mídia para selecioná-la: ")
-                )
-            except ValueError:
-                print("Opção inválida.\n")
-                continue
-
-            if selected_option == 0:
-                return
-
-            if selected_option < 0 or selected_option > len(medias):
-                print("Opção inválida.\n")
-                continue
-
-            selected_media = medias[selected_option - 1]
+        def execute_for_option(selected_media: MediaFile):
             MediaMenu(self.context, selected_media).show()
+
+        MediaLibraryMenu.prompt_generic(
+            medias,
+            f"Mídias do site {self.selected_site.name}\n",
+            execute_for_option,
+            lambda m: m.filename,
+        )
+
+        # while True:
+        #     os.system("clear")
+        #     print(f"Mídias do site '{self.selected_site.name}':")
+        #     for i, media in enumerate(medias):
+        #         print(f"{i + 1}. {media.filename}")
+        #     print("0. Voltar")
+        #     print(" ")
+
+        #     try:
+        #         selected_option = int(
+        #             input("Digite o número da mídia para selecioná-la: ")
+        #         )
+        #     except ValueError:
+        #         print("Opção inválida.\n")
+        #         continue
+
+        #     if selected_option == 0:
+        #         return
+
+        #     if selected_option < 0 or selected_option > len(medias):
+        #         print("Opção inválida.\n")
+        #         continue
+
+        #     selected_media = medias[selected_option - 1]
+        #     MediaMenu(self.context, selected_media).show()
