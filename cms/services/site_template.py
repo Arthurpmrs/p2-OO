@@ -54,10 +54,7 @@ class FocusOnMediaTemplate(SiteTemplate):
         return [
             p
             for p in self.post_repo.get_site_posts(self.site)
-            if any(
-                isinstance(b, MediaBlock)
-                for b in p.content_by_language[p.default_language.code].body
-            )
+            if any(isinstance(b, MediaBlock) for b in p.get_default_body())
         ]
 
     def display_post(self, post: Post):

@@ -4,22 +4,22 @@ from cms.services.languages import LanguageService
 
 class PostTranslator:
     def __init__(self, post: Post):
-        self.post = post
-        self.original_language = post.default_language
-        self.lang_service = LanguageService()
+        self.__post = post
+        self.__original_language = post.default_language
+        self.__lang_service = LanguageService()
 
     def translate(self):
-        missing_langs = self.lang_service.get_missing_languages(self.post)
-        target_language = self.lang_service.select_language(missing_langs)
+        missing_langs = self.__lang_service.get_missing_languages(self.__post)
+        target_language = self.__lang_service.select_language(missing_langs)
 
         if not target_language:
             return
 
-        original_content = self.post.get_content_by_language()
+        original_content = self.__post.get_content_by_language()
         translated_blocks: list[ContentBlock] = []
 
         print(
-            f"Traduzindo post '{original_content.title}' do idioma {self.original_language} para {target_language}.\n"
+            f"Traduzindo post '{original_content.title}' do idioma {self.__original_language} para {target_language}.\n"
         )
 
         translated_title = input("Tradução do título: ").strip()
@@ -53,6 +53,6 @@ class PostTranslator:
             language=target_language,
         )
 
-        self.post.content_by_language[target_language.code] = translated_content
+        self.__post.add_content(target_language.code, translated_content)
         print(f"Tradução para '{target_language}' adicionada ao post.")
         input("Clique Enter para voltar.")

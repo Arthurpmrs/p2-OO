@@ -162,15 +162,20 @@ class Post:
     id: int = field(init=False)
     poster: User
     site: Site
-    content_by_language: dict[LanguageCode, Content]
     scheduled_to: datetime = field(default_factory=datetime.now)
     created_at: datetime = field(default_factory=datetime.now)
+    __content_by_language: dict[LanguageCode, Content] = field(
+        init=False, default_factory=dict[LanguageCode, Content]
+    )
+
+    def add_content(self, lang: LanguageCode, content: Content):
+        self.__content_by_language[lang] = content
 
     @property
     def default_language(self) -> Language:
-        if not self.content_by_language:
+        if not self.__content_by_language:
             raise ValueError(f"No content provided for Post(id={self.id}).")
-        return next(iter(self.content_by_language.values())).language
+        return next(iter(self.__content_by_language.values())).language
 
     def is_visible(self) -> bool:
         return self.scheduled_to >= datetime.now()
@@ -219,7 +224,7 @@ class Post:
         return s
 
     def display_first_post_image(self):
-        for block in self.content_by_language[self.default_language.code].body:
+        for block in self.__content_by_language[self.default_language.code].body:
             if isinstance(block, MediaBlock):
                 block.display_content()
                 return
@@ -228,16 +233,19 @@ class Post:
         if not language:
             language = self.default_language
 
-        return self.content_by_language[language.code]
+        return self.__content_by_language[language.code]
 
     def get_default_title(self) -> str:
-        if not self.content_by_language:
+        if not self.__content_by_language:
             raise ValueError(f"No content provided for Post(id={self.id}).")
 
-        return self.content_by_language[self.default_language.code].title
+        return self.__content_by_language[self.default_language.code].title
 
     def get_languages(self) -> list[Language]:
-        return [content.language for content in self.content_by_language.values()]
+        return [content.language for content in self.__content_by_language.values()]
+
+    def get_default_body(self) -> list[ContentBlock]:
+        return self.__content_by_language[self.default_language.code].body
 
 
 @dataclass

@@ -6,17 +6,20 @@ Trata-se de um sistema de linha de comando em que o usuário pode criar e gerenc
 python main.py
 ```
 
+>[!warning]
+> Desenvolvido e testado com Python `3.13`.
+
 ## Funcionalidades implementadas
-- [ ] User Roles and Permissions
-- [ ] Content Creation and Editing
-- [ ] Comment and Review System
-- [ ] Media Library Management
-- [ ] Content Scheduling
-- [ ] Analytics and Reporting
-- [ ] Template and Design Customization
-- [ ] SEO Optimization Tools
-- [ ] Multi-Language Support
-- [ ] Social Media Integration
+- [x] User Roles and Permissions
+- [x] Content Creation and Editing
+- [x] Comment and Review System
+- [x] Media Library Management
+- [x] Content Scheduling
+- [x] Analytics and Reporting
+- [x] Template and Design Customization
+- [x] SEO Optimization Tools
+- [x] Multi-Language Support
+- [x] Social Media Integration
 
 ## Projeto do Modelo do Sistema (Objetos)
 - **User**: Represents an user in the system

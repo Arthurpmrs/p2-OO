@@ -2,10 +2,10 @@ from cms.models import Language, LanguageCode, Post
 
 
 class LanguageService:
-    supported_languages: list[Language]
+    __supported_languages: list[Language]
 
     def __init__(self):
-        self.supported_languages = [
+        self.__supported_languages = [
             Language(
                 name="Português Brasileiro", code="pt-br", aliases=["ptbr", "pt", "br"]
             ),
@@ -18,7 +18,7 @@ class LanguageService:
         ]
 
     def get_language_by_code(self, code: LanguageCode) -> Language:
-        for lang in self.supported_languages:
+        for lang in self.__supported_languages:
             if lang.is_language(code):
                 return lang
 
@@ -27,11 +27,15 @@ class LanguageService:
     def get_missing_languages(self, post: Post) -> list[Language]:
         return [
             lang
-            for lang in self.supported_languages
+            for lang in self.__supported_languages
             if lang not in post.get_languages()
         ]
 
-    def select_language(self, languages: list[Language]) -> Language | None:
+    def select_from_supported_languages(self) -> Language | None:
+        return LanguageService.select_language(self.__supported_languages)
+
+    @staticmethod
+    def select_language(languages: list[Language]) -> Language | None:
         if not languages:
             input("Não há linguagens suportadas disponíveis. Clique Enter para voltar.")
             return None
@@ -53,11 +57,8 @@ class LanguageService:
             if selected_option == 0:
                 return None
 
-            if selected_option < 0 or selected_option > len(self.supported_languages):
+            if selected_option < 0 or selected_option > len(languages):
                 print("Opção inválida.\n")
                 continue
 
             return languages[selected_option - 1]
-
-    def select_from_supported_languages(self) -> Language | None:
-        return self.select_language(self.supported_languages)

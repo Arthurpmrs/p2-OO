@@ -138,7 +138,6 @@ class AppContext:
         return self.__lang_service
 
     def reset_context(self):
-        """Reinicia os repositórios e estado."""
         self.__site_repo = SiteRepository()
         self.__post_repo = PostRepository()
         self.__user_repo = UserRepository()

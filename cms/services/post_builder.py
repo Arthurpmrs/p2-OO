@@ -17,14 +17,14 @@ from cms.repository import MediaRepository
 
 class PostBuilder:
     def __init__(self, site: Site, poster: User, media_repo: MediaRepository):
-        self.site = site
-        self.poster = poster
-        self.media_repo = media_repo
-        self.blocks: list[ContentBlock] = []
-        self.lang_service = LanguageService()
+        self.__site = site
+        self.__poster = poster
+        self.__media_repo = media_repo
+        self.__blocks: list[ContentBlock] = []
+        self.__lang_service = LanguageService()
 
     def build_post(self) -> Post:
-        language = self.lang_service.select_from_supported_languages()
+        language = self.__lang_service.select_from_supported_languages()
         if not language:
             raise ValueError("Cannot continue post building without language")
 
@@ -48,14 +48,14 @@ class PostBuilder:
             elif block_option == 1:
                 text = input("Digite o conteúdo de texto: ")
                 block = TextBlock(order=order_counter, text=text)
-                self.blocks.append(block)
+                self.__blocks.append(block)
             elif block_option == 2:
                 media = self.select_media()
                 if not media:
                     continue
                 alt = input("Digite o texto alternativo (alt) para a mídia: ")
                 block = MediaBlock(order=order_counter, media=media, alt=alt)
-                self.blocks.append(block)
+                self.__blocks.append(block)
             else:
                 print("Opção inválida.")
 
@@ -69,21 +69,21 @@ class PostBuilder:
 
         post_content = Content(
             title=title,
-            body=self.blocks,
+            body=self.__blocks,
             language=language,
         )
 
         post = Post(
-            poster=self.poster,
-            site=self.site,
-            content_by_language={language.code: post_content},
+            poster=self.__poster,
+            site=self.__site,
             scheduled_to=scheduled_to,
         )
+        post.add_content(language.code, post_content)
 
         return post
 
     def select_media(self) -> MediaFile | None:
-        medias = self.media_repo.get_site_medias(self.site)
+        medias = self.__media_repo.get_site_medias(self.__site)
 
         if not medias:
             input("Nenhuma mídia disponível para este site. Clique Enter para voltar.")
